@@ -75,29 +75,39 @@ function setWinner(idx,val){
   schedule[idx].winner = parseInt(val);
 }
 
-function calculatePerformance(){
-  // tally
-  schedule.forEach(g=>{
-    if(!g.winner) return;
-    let winTeam = (g.winner===1?g.team1:g.team2);
-    let all = [...g.team1,...g.team2];
-    all.forEach(p=>playerPerformance[p].games++);
-    winTeam.forEach(p=>playerPerformance[p].wins++);
-  });
+function calculatePerformance() {
+    schedule.forEach(g => {
+        if (!g.winner) return;
+        const winTeam = g.winner === 1 ? g.team1 : g.team2;
+        const all = [...g.team1, ...g.team2];
+        all.forEach(p => performance[p].games++);
+        winTeam.forEach(p => performance[p].wins++);
+    });
 
-  // sort by wins desc, then games
-  let sorted = names.slice().sort((a,b)=>{
-    let pa=playerPerformance[a], pb=playerPerformance[b];
-    return (pb.wins-pa.wins)||(pb.games-pa.games);
-  });
+    const sorted = Object.entries(performance)
+        .map(([name, data]) => {
+            const { wins, games } = data;
+            const rate = games ? ((wins / games) * 100).toFixed(1) : '0.0';
+            return { name, wins, games, rate };
+        })
+        .sort((a, b) => b.rate - a.rate);
 
-  // build table
-  let html = '<h3>🏆 Player Performance</h3><table><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th></tr>';
-  sorted.forEach(p=>{
-    let s=playerPerformance[p];
-    let rate = s.games?((s.wins/s.games*100).toFixed(1)+'%'):'N/A';
-    html+=`<tr><td>${p}</td><td>${s.games}</td><td>${s.wins}</td><td>${rate}</td></tr>`;
-  });
-  html+='</table>';
-  document.getElementById('performanceTable').innerHTML = html;
+    let html = `
+        <h3>🎯 Final Result</h3>
+        <table>
+            <thead><tr>
+                <th>Player</th><th>Wins:Games</th><th>Win %</th>
+            </tr></thead>
+            <tbody>
+    `;
+    sorted.forEach(p => {
+        html += `<tr>
+            <td>${p.name}</td>
+            <td>${p.wins}:${p.games}</td>
+            <td>${p.rate}%</td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+
+    document.getElementById('performanceTable').innerHTML = html;
 }
