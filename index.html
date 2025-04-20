@@ -4,45 +4,216 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Badminton Game Scheduler</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            padding: 10px;
+            margin: 0;
+        }
+        .container {
+            max-width: 100%;
+            margin: auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .performance {
+            margin-top: 30px;
+        }
+        @media (max-width: 600px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                display: none;
+            }
+            td {
+                position: relative;
+                padding-left: 50%;
+                text-align: left;
+            }
+            td:before {
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                width: 45%;
+                white-space: nowrap;
+                font-weight: bold;
+            }
+            td:nth-of-type(1):before { content: "Game"; }
+            td:nth-of-type(2):before { content: "Team 1"; }
+            td:nth-of-type(3):before { content: "Team 2"; }
+            td:nth-of-type(4):before { content: "Resting"; }
+            td:nth-of-type(5):before { content: "Winner"; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🏸 Badminton Scheduler</h1>
-        
-        <!-- Player Input Section -->
-        <label>Player Names (comma separated):</label>
-        <input type="text" id="playerNames" placeholder="A, B, C, D, E, F">
+<div class="container">
+    <h1>🏸 Badminton Scheduler</h1>
+    <label>Player Names (comma separated):</label>
+    <input type="text" id="playerNames" placeholder="A, B, C, D, E, F">
+    <label>Number of Games:</label>
+    <input type="number" id="numGames" placeholder="8">
+    <button onclick="generateSchedule()">Generate Schedule</button>
 
-        <label>Number of Games:</label>
-        <input type="number" id="numGames" placeholder="8">
+    <div id="idealGames"></div>
 
-        <button onclick="generateSchedule()">Generate Schedule</button>
+    <table id="scheduleTable">
+        <thead>
+        <tr>
+            <th>Game</th>
+            <th>Team 1</th>
+            <th>Team 2</th>
+            <th>Resting</th>
+            <th>Winner (Input 1 or 2)</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-        <!-- Ideal Games Section -->
-        <div id="idealGames" class="ideal"></div>
+    <button onclick="calculatePerformance()">Show Performance</button>
+    <div id="performanceTable" class="performance"></div>
+</div>
 
-        <!-- Game Schedule Table -->
-        <table id="scheduleTable">
-            <thead>
-                <tr>
-                    <th>Game</th>
-                    <th>Team 1</th>
-                    <th>Team 2</th>
-                    <th>Resting</th>
-                    <th>Winner (1 or 2)</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+<script>
+let names = [], schedule = [], playerState = {}, playerPerformance = {};
 
-        <!-- Show Performance Button -->
-        <button onclick="calculatePerformance()">Show Performance</button>
+function calculateIdealGames(playerCount) {
+    const totalPairs = (playerCount * (playerCount - 1)) / 2;
+    const pairsPerGame = 2;
+    return Math.ceil(totalPairs / pairsPerGame);
+}
 
-        <!-- Player Performance Table -->
-        <div id="performanceTable" class="performance"></div>
-    </div>
+function generateSchedule() {
+    names = document.getElementById('playerNames').value.split(',').map(n => n.trim()).filter(n => n);
+    const totalGames = parseInt(document.getElementById('numGames').value) || 8;
+    if (names.length < 6) return alert("Need at least 6 players");
 
-    <script src="script.js"></script>
+    playerState = {};
+    playerPerformance = {};
+    names.forEach(name => {
+        playerState[name] = { played: 0, restStreak: 0, gameStreak: 0 };
+        playerPerformance[name] = { wins: 0, games: 0 };
+    });
+
+    document.getElementById('idealGames').innerHTML = `🔢 Ideal games for full teammate pairing: <strong>${calculateIdealGames(names.length)}</strong>`;
+
+    schedule = [];
+
+    function isValid(player) {
+        return playerState[player].gameStreak < 2 && playerState[player].restStreak < 2;
+    }
+
+    function updateState(gamePlayers, restingPlayers) {
+        for (let name of names) {
+            if (gamePlayers.includes(name)) {
+                playerState[name].played++;
+                playerState[name].gameStreak++;
+                playerState[name].restStreak = 0;
+            } else {
+                playerState[name].restStreak++;
+                playerState[name].gameStreak = 0;
+            }
+        }
+    }
+
+    for (let g = 1; g <= totalGames; g++) {
+        let available = names.filter(isValid);
+        if (available.length < 4) available = names;
+
+        for (let i = available.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [available[i], available[j]] = [available[j], available[i]];
+        }
+
+        const gamePlayers = available.slice(0, 4);
+        const team1 = gamePlayers.slice(0, 2);
+        const team2 = gamePlayers.slice(2, 4);
+        const resting = names.filter(p => !gamePlayers.includes(p));
+
+        schedule.push({ game: g, team1, team2, resting, winner: null });
+        updateState(gamePlayers, resting);
+    }
+
+    const tbody = document.querySelector('#scheduleTable tbody');
+    tbody.innerHTML = '';
+    schedule.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.game}</td>
+            <td>${row.team1.join(', ')}</td>
+            <td>${row.team2.join(', ')}</td>
+            <td>${row.resting.join(', ')}</td>
+            <td><input type='number' min='1' max='2' onchange='setWinner(${i}, this.value)'></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function setWinner(index, val) {
+    schedule[index].winner = parseInt(val);
+}
+
+function calculatePerformance() {
+    schedule.forEach(game => {
+        if (!game.winner) return;
+        const winningTeam = game.winner === 1 ? game.team1 : game.team2;
+        const allPlayers = [...game.team1, ...game.team2];
+        allPlayers.forEach(player => playerPerformance[player].games++);
+        winningTeam.forEach(player => playerPerformance[player].wins++);
+    });
+
+    const sortedPlayers = [...names].sort((a, b) => {
+        const winRateA = playerPerformance[a].wins / (playerPerformance[a].games || 1);
+        const winRateB = playerPerformance[b].wins / (playerPerformance[b].games || 1);
+        return winRateB - winRateA;
+    });
+
+    let html = '<h3>🏆 Player Performance</h3><table><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th></tr>';
+    for (let player of sortedPlayers) {
+        const p = playerPerformance[player];
+        const winRate = p.games ? ((p.wins / p.games) * 100).toFixed(1) + '%' : 'N/A';
+        html += `<tr><td>${player}</td><td>${p.games}</td><td>${p.wins}</td><td>${winRate}</td></tr>`;
+    }
+    html += '</table>';
+    document.getElementById('performanceTable').innerHTML = html;
+}
+</script>
 </body>
 </html>
+
