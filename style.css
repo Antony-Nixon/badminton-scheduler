@@ -1,55 +1,51 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #f2f2f2;
-    padding: 20px;
-  }
-  .container {
-    max-width: 800px;
+    font-family: sans-serif;
+    background: #f9f9f9;
+    padding: 10px;
+    margin: 0;
+}
+.container {
+    max-width: 600px;
     margin: auto;
-    background: #fff;
-    padding: 20px;
+    background: white;
+    padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  }
-  label {
-    display: block;
-    margin-top: 15px;
-    font-weight: bold;
-  }
-  input, button {
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+h1 {
+    text-align: center;
+}
+input, button {
     width: 100%;
     padding: 10px;
-    margin: 5px 0 10px;
+    margin: 8px 0;
     box-sizing: border-box;
-  }
-  button {
-    background: #28a745;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #218838;
-  }
-  table {
+    font-size: 16px;
+}
+table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: center;
-  }
-  th {
-    background: #007bff;
-    color: #fff;
-  }
-  .ideal {
     margin-top: 15px;
-    font-size: 0.9em;
-  }
-  .performance {
-    margin-top: 30px;
-  }
-  
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+th {
+    background: #333;
+    color: white;
+}
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #0056b3;
+}
+.performance {
+    margin-top: 20px;
+}
