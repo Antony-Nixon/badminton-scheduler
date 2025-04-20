@@ -75,7 +75,7 @@
     <div class="performance" id="performanceTable"></div>
 </div>
 <script>
-let names = [], schedule = [], state = {}, performance = {};
+let names = [], schedule = [], state = {}, performance = {}, teamHistory = {};
 
 function generateSchedule() {
     names = document.getElementById('playerNames').value.split(',').map(x => x.trim()).filter(x => x);
@@ -89,9 +89,15 @@ function generateSchedule() {
     schedule = [];
     state = {};
     performance = {};
+    teamHistory = {};
+
     names.forEach(n => {
         state[n] = { lastPlayed: [], games: 0 };
         performance[n] = { wins: 0, games: 0 };
+        teamHistory[n] = {};
+        names.forEach(m => {
+            if (n !== m) teamHistory[n][m] = 0;
+        });
     });
 
     for (let g = 0; g < numGames; g++) {
@@ -103,16 +109,23 @@ function generateSchedule() {
             return !(played2inRow || rest2in3);
         });
 
-        // Fallback: if not enough candidates, reset recent memory
         if (candidates.length < 4) candidates = names;
 
-        // Shuffle candidates
-        for (let i = candidates.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        let bestCombo = null;
+        let minTeamCount = Infinity;
+
+        for (let i = 0; i < 20; i++) {
+            const sample = [...candidates].sort(() => Math.random() - 0.5).slice(0, 4);
+            const [a, b, c, d] = sample;
+            const count = teamHistory[a][b] + teamHistory[c][d];
+
+            if (count < minTeamCount) {
+                minTeamCount = count;
+                bestCombo = sample;
+            }
         }
 
-        const gamePlayers = candidates.slice(0, 4);
+        const gamePlayers = bestCombo;
         const team1 = gamePlayers.slice(0, 2);
         const team2 = gamePlayers.slice(2, 4);
         const resting = names.filter(n => !gamePlayers.includes(n));
@@ -127,6 +140,11 @@ function generateSchedule() {
                 state[p].lastPlayed.push('R');
             }
         });
+
+        teamHistory[team1[0]][team1[1]]++;
+        teamHistory[team1[1]][team1[0]]++;
+        teamHistory[team2[0]][team2[1]]++;
+        teamHistory[team2[1]][team2[0]]++;
     }
 
     const tbody = document.querySelector('#scheduleTable tbody');
@@ -158,23 +176,34 @@ function calculatePerformance() {
         winTeam.forEach(p => performance[p].wins++);
     });
 
-    const sorted = Object.keys(performance).sort((a, b) => {
-        const wa = performance[a];
-        const wb = performance[b];
-        const ra = wa.games ? wa.wins / wa.games : 0;
-        const rb = wb.games ? wb.wins / wb.games : 0;
-        return rb - ra;
-    });
+    const sorted = Object.entries(performance)
+        .map(([name, data]) => {
+            const { wins, games } = data;
+            const rate = games ? ((wins / games) * 100).toFixed(1) : '0.0';
+            return { name, wins, games, rate };
+        })
+        .sort((a, b) => b.rate - a.rate);
 
-    let html = `<h3>🎯 Final Result</h3><table><tr><th>Player</th><th>Wins:Games</th><th>Win%</th></tr>`;
+    let html = `
+        <h3>🎯 Final Result</h3>
+        <table>
+            <thead><tr>
+                <th>Player</th><th>Wins:Games</th><th>Win %</th>
+            </tr></thead>
+            <tbody>
+    `;
     sorted.forEach(p => {
-        const { wins, games } = performance[p];
-        const rate = games ? ((wins / games) * 100).toFixed(1) : '0.0';
-        html += `<tr><td>${p}</td><td>${wins}:${games}</td><td>${rate}%</td></tr>`;
+        html += `<tr>
+            <td>${p.name}</td>
+            <td>${p.wins}:${p.games}</td>
+            <td>${p.rate}%</td>
+        </tr>`;
     });
-    html += '</table>';
+    html += '</tbody></table>';
+
     document.getElementById('performanceTable').innerHTML = html;
 }
 </script>
 </body>
 </html>
+
