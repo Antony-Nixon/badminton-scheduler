@@ -2,26 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Badminton Game Scheduler</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badminton Game Scheduler</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <h1>🏸 Scheduler</h1>
-    <input type="text" id="playerNames" placeholder="Enter player names (comma separated)">
-    <input type="number" id="numGames" placeholder="Number of games">
-    <button onclick="generateSchedule()">Generate</button>
-    <div id="idealGames"></div>
-    <table id="scheduleTable">
-        <thead>
-        <tr><th>Game</th><th>Team 1</th><th>Team 2</th><th>Resting</th><th>Winner (1/2)</th></tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <button onclick="calculatePerformance()">Show Result</button>
-    <div class="performance" id="performanceTable"></div>
-</div>
-<script src="script.js"></script>
+    <div class="container">
+        <h1>Badminton Game Scheduler</h1>
+        
+        <!-- Setup Section -->
+        <div id="setup-section">
+            <h2>Setup</h2>
+            <div class="form-group">
+                <label for="player-name">Enter Player Names (minimum 6):</label>
+                <div class="input-group">
+                    <input type="text" id="player-name" placeholder="Enter player name">
+                    <button id="add-player">Add</button>
+                </div>
+                <ul id="player-list" class="player-list"></ul>
+                <div class="error" id="player-error"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="total-games">Total Number of Games:</label>
+                <input type="number" id="total-games" min="1" value="5">
+            </div>
+            
+            <button id="generate-schedule" class="btn-primary">Generate Schedule</button>
+        </div>
+        
+        <!-- Schedule Section -->
+        <div id="schedule-section" class="hidden">
+            <h2>Game Schedule</h2>
+            <div id="current-game-display">
+                <h3>Game <span id="current-game-number">1</span> of <span id="total-game-count"></span></h3>
+                
+                <div class="teams-container">
+                    <div class="team">
+                        <h4>Team A</h4>
+                        <div id="team-a" class="team-players"></div>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="team">
+                        <h4>Team B</h4>
+                        <div id="team-b" class="team-players"></div>
+                    </div>
+                </div>
+                
+                <div class="resting-players">
+                    <h4>Resting Players</h4>
+                    <div id="resting-players-list"></div>
+                </div>
+                
+                <div class="game-controls">
+                    <h4>Winner</h4>
+                    <div class="winner-buttons">
+                        <button id="team-a-win" class="btn-winner">Team A</button>
+                        <button id="team-b-win" class="btn-winner">Team B</button>
+                    </div>
+                    <button id="next-game" class="btn-primary" disabled>Next Game</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="results-section" class="hidden">
+            <h2>Performance Table</h2>
+            <table id="performance-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Games Played</th>
+                        <th>Wins</th>
+                        <th>Win %</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+            <button id="new-schedule" class="btn-primary">Create New Schedule</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
