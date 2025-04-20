@@ -1,78 +1,93 @@
-let names = [], schedule = [], playerState = {}, playerPerformance = {};
-
-function calculateIdealGames(n) {
-  const totalPairs = n * (n - 1) / 2;
-  return Math.ceil(totalPairs / 2);
-}
+let names = [], schedule = [], state = {}, performance = {}, teamHistory = {};
 
 function generateSchedule() {
-  names = document.getElementById('playerNames').value
-    .split(',').map(n=>n.trim()).filter(n=>n);
-  const totalGames = parseInt(document.getElementById('numGames').value) || 8;
-  if (names.length < 6) return alert('Need at least 6 players');
+    names = document.getElementById('playerNames').value.split(',').map(x => x.trim()).filter(x => x);
+    const numGames = parseInt(document.getElementById('numGames').value);
+    if (names.length < 6 || isNaN(numGames)) return alert('Minimum 6 players and valid number of games');
 
-  // init state
-  playerState = {};
-  playerPerformance = {};
-  names.forEach(n => {
-    playerState[n] = {gameStreak:0, restStreak:0};
-    playerPerformance[n] = {wins:0, games:0};
-  });
+    const totalPairs = (names.length * (names.length - 1)) / 2;
+    const ideal = Math.ceil(totalPairs / 2);
+    document.getElementById('idealGames').innerHTML = `Ideal games for full pairing: <strong>${ideal}</strong>`;
 
-  // show ideal count
-  document.getElementById('idealGames').innerHTML =
-    `🔢 Ideal games for full pairing: <strong>${calculateIdealGames(names.length)}</strong>`;
+    schedule = [];
+    state = {};
+    performance = {};
+    teamHistory = {};
 
-  // build schedule
-  schedule = [];
-  function valid(p){ return playerState[p].gameStreak<2 && playerState[p].restStreak<2; }
-  function updateState(playersIn) {
-    names.forEach(n=>{
-      if(playersIn.includes(n)){
-        playerState[n].gameStreak++;
-        playerState[n].restStreak=0;
-      } else {
-        playerState[n].restStreak++;
-        playerState[n].gameStreak=0;
-      }
+    names.forEach(n => {
+        state[n] = { lastPlayed: [], games: 0 };
+        performance[n] = { wins: 0, games: 0 };
+        teamHistory[n] = {};
+        names.forEach(m => {
+            if (n !== m) teamHistory[n][m] = 0;
+        });
     });
-  }
 
-  for(let g=1; g<=totalGames; g++){
-    let avail = names.filter(valid);
-    if(avail.length<4) avail = names.slice();
-    // shuffle
-    for(let i=avail.length-1;i>0;i--){
-      let j=Math.floor(Math.random()*(i+1));
-      [avail[i],avail[j]]=[avail[j],avail[i]];
+    for (let g = 0; g < numGames; g++) {
+        let candidates = names.filter(p => {
+            const recent = state[p].lastPlayed.slice(-2);
+            const gamesInLast3 = state[p].lastPlayed.slice(-3);
+            const played2inRow = recent.every(x => x === 'P');
+            const rest2in3 = gamesInLast3.filter(x => x === 'R').length > 1;
+            return !(played2inRow || rest2in3);
+        });
+
+        if (candidates.length < 4) candidates = names;
+
+        let bestCombo = null;
+        let minTeamCount = Infinity;
+
+        for (let i = 0; i < 20; i++) {
+            const sample = [...candidates].sort(() => Math.random() - 0.5).slice(0, 4);
+            const [a, b, c, d] = sample;
+            const count = teamHistory[a][b] + teamHistory[c][d];
+
+            if (count < minTeamCount) {
+                minTeamCount = count;
+                bestCombo = sample;
+            }
+        }
+
+        const gamePlayers = bestCombo;
+        const team1 = gamePlayers.slice(0, 2);
+        const team2 = gamePlayers.slice(2, 4);
+        const resting = names.filter(n => !gamePlayers.includes(n));
+
+        schedule.push({ team1, team2, resting, winner: null });
+
+        names.forEach(p => {
+            if (gamePlayers.includes(p)) {
+                state[p].lastPlayed.push('P');
+                state[p].games++;
+            } else {
+                state[p].lastPlayed.push('R');
+            }
+        });
+
+        teamHistory[team1[0]][team1[1]]++;
+        teamHistory[team1[1]][team1[0]]++;
+        teamHistory[team2[0]][team2[1]]++;
+        teamHistory[team2[1]][team2[0]]++;
     }
-    let play = avail.slice(0,4);
-    let t1 = play.slice(0,2), t2 = play.slice(2,4);
-    let rest = names.filter(n=>!play.includes(n));
-    schedule.push({game:g, team1:t1, team2:t2, resting:rest, winner:null});
-    updateState(play);
-  }
 
-  // render
-  let tbody = document.querySelector('#scheduleTable tbody');
-  tbody.innerHTML = '';
-  schedule.forEach((r,i)=>{
-    let tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.game}</td>
-      <td>${r.team1.join(', ')}</td>
-      <td>${r.team2.join(', ')}</td>
-      <td>${r.resting.join(', ')}</td>
-      <td>
-        <input type="number" min="1" max="2"
-               onchange="setWinner(${i}, this.value)">
-      </td>`;
-    tbody.appendChild(tr);
-  });
+    const tbody = document.querySelector('#scheduleTable tbody');
+    tbody.innerHTML = '';
+    schedule.forEach((g, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${g.team1.join(', ')}</td>
+            <td>${g.team2.join(', ')}</td>
+            <td>${g.resting.join(', ')}</td>
+            <td><input type='number' min='1' max='2' onchange='setWinner(${i}, this.value)'></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-function setWinner(idx,val){
-  schedule[idx].winner = parseInt(val);
+function setWinner(index, value) {
+    const val = parseInt(value);
+    if (val === 1 || val === 2) schedule[index].winner = val;
 }
 
 function calculatePerformance() {
@@ -111,3 +126,4 @@ function calculatePerformance() {
 
     document.getElementById('performanceTable').innerHTML = html;
 }
+
