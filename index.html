@@ -1,221 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Badminton Game Scheduler</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 15px;
-      background-color: #f9f9f9;
-    }
-    .container {
-      max-width: 100%;
-      background: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 16px;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 6px;
-    }
-    button:hover {
-      background-color: #218838;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: white;
-    }
-    .performance {
-      margin-top: 25px;
-    }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      th {
-        display: none;
-      }
-      td {
-        position: relative;
-        padding-left: 50%;
-        text-align: left;
-        border: none;
-        border-bottom: 1px solid #eee;
-      }
-      td::before {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
-        font-weight: bold;
-      }
-      td:nth-of-type(1)::before { content: "Game"; }
-      td:nth-of-type(2)::before { content: "Team 1"; }
-      td:nth-of-type(3)::before { content: "Team 2"; }
-      td:nth-of-type(4)::before { content: "Resting"; }
-      td:nth-of-type(5)::before { content: "Winner"; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Badminton Game Scheduler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background: #333;
+            color: white;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .performance {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-  <h2>🏸 Badminton Scheduler</h2>
-  <label>Player Names (comma separated):</label>
-  <input type="text" id="playerNames" placeholder="A, B, C, D, E, F">
-  <label>Number of Games:</label>
-  <input type="number" id="numGames" placeholder="8">
-  <button onclick="generateSchedule()">Generate Schedule</button>
-  <div id="idealGames" style="margin: 10px 0;"></div>
-
-  <table id="scheduleTable">
-    <thead>
-    <tr>
-      <th>Game</th>
-      <th>Team 1</th>
-      <th>Team 2</th>
-      <th>Resting</th>
-      <th>Winner (1 or 2)</th>
-    </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <button onclick="calculatePerformance()">Show Performance</button>
-  <div id="performanceTable" class="performance"></div>
+    <h1>🏸 Scheduler</h1>
+    <input type="text" id="playerNames" placeholder="Enter player names (comma separated)">
+    <input type="number" id="numGames" placeholder="Number of games">
+    <button onclick="generateSchedule()">Generate</button>
+    <div id="idealGames"></div>
+    <table id="scheduleTable">
+        <thead>
+        <tr><th>Game</th><th>Team 1</th><th>Team 2</th><th>Resting</th><th>Winner (1/2)</th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button onclick="calculatePerformance()">Show Result</button>
+    <div class="performance" id="performanceTable"></div>
 </div>
-
 <script>
-let names = [], schedule = [], playerState = {}, playerPerformance = {};
-
-function calculateIdealGames(playerCount) {
-  const totalPairs = (playerCount * (playerCount - 1)) / 2;
-  const pairsPerGame = 2;
-  return Math.ceil(totalPairs / pairsPerGame);
-}
+let names = [], schedule = [], state = {}, performance = {};
 
 function generateSchedule() {
-  names = document.getElementById('playerNames').value.split(',').map(n => n.trim()).filter(n => n);
-  const totalGames = parseInt(document.getElementById('numGames').value) || 8;
-  if (names.length < 6) return alert("Need at least 6 players");
+    names = document.getElementById('playerNames').value.split(',').map(x => x.trim()).filter(x => x);
+    const numGames = parseInt(document.getElementById('numGames').value);
+    if (names.length < 6 || isNaN(numGames)) return alert('Minimum 6 players and valid number of games');
 
-  playerState = {};
-  playerPerformance = {};
-  names.forEach(name => {
-    playerState[name] = { played: 0, restStreak: 0, gameStreak: 0 };
-    playerPerformance[name] = { wins: 0, games: 0 };
-  });
+    const totalPairs = (names.length * (names.length - 1)) / 2;
+    const ideal = Math.ceil(totalPairs / 2);
+    document.getElementById('idealGames').innerHTML = `Ideal games for full pairing: <strong>${ideal}</strong>`;
 
-  document.getElementById('idealGames').innerHTML = `🎯 Ideal games for full teammate pairing: <strong>${calculateIdealGames(names.length)}</strong>`;
+    schedule = [];
+    state = {};
+    performance = {};
+    names.forEach(n => {
+        state[n] = { lastPlayed: [], games: 0 };
+        performance[n] = { wins: 0, games: 0 };
+    });
 
-  schedule = [];
+    for (let g = 0; g < numGames; g++) {
+        let candidates = names.filter(p => {
+            const recent = state[p].lastPlayed.slice(-2);
+            const gamesInLast3 = state[p].lastPlayed.slice(-3);
+            const played2inRow = recent.every(x => x === 'P');
+            const rest2in3 = gamesInLast3.filter(x => x === 'R').length > 1;
+            return !(played2inRow || rest2in3);
+        });
 
-  function isValid(player) {
-    return playerState[player].gameStreak < 2 && playerState[player].restStreak < 2;
-  }
+        // Fallback: if not enough candidates, reset recent memory
+        if (candidates.length < 4) candidates = names;
 
-  function updateState(gamePlayers) {
-    for (let name of names) {
-      if (gamePlayers.includes(name)) {
-        playerState[name].played++;
-        playerState[name].gameStreak++;
-        playerState[name].restStreak = 0;
-      } else {
-        playerState[name].restStreak++;
-        playerState[name].gameStreak = 0;
-      }
+        // Shuffle candidates
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+
+        const gamePlayers = candidates.slice(0, 4);
+        const team1 = gamePlayers.slice(0, 2);
+        const team2 = gamePlayers.slice(2, 4);
+        const resting = names.filter(n => !gamePlayers.includes(n));
+
+        schedule.push({ team1, team2, resting, winner: null });
+
+        names.forEach(p => {
+            if (gamePlayers.includes(p)) {
+                state[p].lastPlayed.push('P');
+                state[p].games++;
+            } else {
+                state[p].lastPlayed.push('R');
+            }
+        });
     }
-  }
 
-  for (let g = 1; g <= totalGames; g++) {
-    let available = names.filter(isValid);
-    if (available.length < 4) available = names;
-
-    for (let i = available.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [available[i], available[j]] = [available[j], available[i]];
-    }
-
-    const gamePlayers = available.slice(0, 4);
-    const team1 = gamePlayers.slice(0, 2);
-    const team2 = gamePlayers.slice(2, 4);
-    const resting = names.filter(p => !gamePlayers.includes(p));
-
-    schedule.push({ game: g, team1, team2, resting, winner: null });
-    updateState(gamePlayers);
-  }
-
-  const tbody = document.querySelector('#scheduleTable tbody');
-  tbody.innerHTML = '';
-  schedule.forEach((row, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${row.game}</td>
-      <td>${row.team1.join(', ')}</td>
-      <td>${row.team2.join(', ')}</td>
-      <td>${row.resting.join(', ')}</td>
-      <td><input type='number' min='1' max='2' onchange='setWinner(${i}, this.value)' style='width: 60px;'></td>
-    `;
-    tbody.appendChild(tr);
-  });
+    const tbody = document.querySelector('#scheduleTable tbody');
+    tbody.innerHTML = '';
+    schedule.forEach((g, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${g.team1.join(', ')}</td>
+            <td>${g.team2.join(', ')}</td>
+            <td>${g.resting.join(', ')}</td>
+            <td><input type='number' min='1' max='2' onchange='setWinner(${i}, this.value)'></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
-function setWinner(index, val) {
-  schedule[index].winner = parseInt(val);
+function setWinner(index, value) {
+    const val = parseInt(value);
+    if (val === 1 || val === 2) schedule[index].winner = val;
 }
 
 function calculatePerformance() {
-  schedule.forEach(game => {
-    if (!game.winner) return;
-    const winningTeam = game.winner === 1 ? game.team1 : game.team2;
-    const allPlayers = [...game.team1, ...game.team2];
-    allPlayers.forEach(p => playerPerformance[p].games++);
-    winningTeam.forEach(p => playerPerformance[p].wins++);
-  });
+    schedule.forEach(g => {
+        if (!g.winner) return;
+        const winTeam = g.winner === 1 ? g.team1 : g.team2;
+        const all = [...g.team1, ...g.team2];
+        all.forEach(p => performance[p].games++);
+        winTeam.forEach(p => performance[p].wins++);
+    });
 
-  const sorted = names.slice().sort((a, b) => {
-    const winRateA = playerPerformance[a].games ? playerPerformance[a].wins / playerPerformance[a].games : 0;
-    const winRateB = playerPerformance[b].games ? playerPerformance[b].wins / playerPerformance[b].games : 0;
-    return winRateB - winRateA;
-  });
+    const sorted = Object.keys(performance).sort((a, b) => {
+        const wa = performance[a];
+        const wb = performance[b];
+        const ra = wa.games ? wa.wins / wa.games : 0;
+        const rb = wb.games ? wb.wins / wb.games : 0;
+        return rb - ra;
+    });
 
-  let html = '<h3>🏆 Player Performance</h3><table><tr><th>Player</th><th>Games</th><th>Wins</th><th>Win %</th></tr>';
-  for (let player of sorted) {
-    const p = playerPerformance[player];
-    const winRate = p.games ? ((p.wins / p.games) * 100).toFixed(1) + '%' : 'N/A';
-    html += `<tr><td>${player}</td><td>${p.games}</td><td>${p.wins}</td><td>${winRate}</td></tr>`;
-  }
-  html += '</table>';
-  document.getElementById('performanceTable').innerHTML = html;
+    let html = `<h3>🎯 Final Result</h3><table><tr><th>Player</th><th>Wins:Games</th><th>Win%</th></tr>`;
+    sorted.forEach(p => {
+        const { wins, games } = performance[p];
+        const rate = games ? ((wins / games) * 100).toFixed(1) : '0.0';
+        html += `<tr><td>${p}</td><td>${wins}:${games}</td><td>${rate}%</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('performanceTable').innerHTML = html;
 }
 </script>
 </body>
 </html>
-
