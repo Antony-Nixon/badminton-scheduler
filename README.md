@@ -1,6 +1,20 @@
 # Badminton Game Scheduler
 
+> **Build fair rotations. Keep everyone on court. 🏸**
+
 A browser-based badminton doubles scheduler for balancing player participation across multiple games, recording winners, and summarizing player performance.
+
+[![Static web app](https://img.shields.io/badge/app-static%20web%20app-3498db)](#how-to-use)
+[![No backend required](https://img.shields.io/badge/backend-none-2c3e50)](#what-it-does)
+[![Built with JavaScript](https://img.shields.io/badge/built%20with-JavaScript-f7df1e?logo=javascript&logoColor=111)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+
+## The idea
+
+Casual games get messy when everyone is trying to remember who played, who is resting, and who won. This app turns that coordination problem into a simple flow:
+
+```text
+Add players → Generate rotation → Play → Record winner → Repeat
+```
 
 ## What it does
 
